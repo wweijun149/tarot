@@ -1,0 +1,44 @@
+{
+  "name": "tarot-app",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "icon": "node scripts/prepare-icon.mjs",
+    "icon:generate": "npm run icon && tauri icon app-icon.png",
+    "tauri:build:win": "tauri build",
+    "tauri:android:init": "tauri android init",
+    "tauri:android:build": "tauri android build -- --apk",
+    "tauri:ios:init": "tauri ios init",
+    "tauri:ios:build": "tauri ios build"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.10.1",
+    "framer-motion": "^12.34.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tarot-engine": "file:../tarot-engine/pkg"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@tauri-apps/cli": "^2.10.0",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "sharp": "^0.34.5",
+    "vite": "^8.0.0-beta.13"
+  },
+  "overrides": {
+    "vite": "^8.0.0-beta.13"
+  }
+}

@@ -1,0 +1,144 @@
+name: 🔮 Tarot CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# 僅允許一個並行部署，後者排隊等待前者完成
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─────────────────────────────────────────────────────
+  # 階段一：Lint & Test
+  # ─────────────────────────────────────────────────────
+  lint-and-test:
+    name: 🔍 Lint & Test
+    runs-on: self-hosted   # 使用本機 runner 加速 Rust 編譯
+    defaults:
+      run:
+        shell: pwsh        # Windows self-hosted runner 使用 PowerShell
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Rust 工具鏈快取 ──────────────────────
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            tarot-engine/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('tarot-engine/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      # ── Rust 品質檢查 ──────────────────────
+      - name: Rust — cargo fmt check
+        run: cargo fmt --manifest-path tarot-engine/Cargo.toml -- --check
+
+      - name: Rust — cargo clippy
+        run: cargo clippy --manifest-path tarot-engine/Cargo.toml -- -D warnings
+
+      - name: Rust — cargo test
+        run: cargo test --lib --manifest-path tarot-engine/Cargo.toml
+
+      # ── Node.js 快取 ──────────────────────────
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: tarot-app/node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('tarot-app/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-npm-
+
+      - name: React — npm install
+        run: npm ci
+        working-directory: tarot-app
+
+      - name: React — eslint
+        run: npm run lint
+        working-directory: tarot-app
+
+  # ─────────────────────────────────────────────────────
+  # 階段二：Build
+  # ─────────────────────────────────────────────────────
+  build:
+    name: 🏗️ Build
+    runs-on: self-hosted
+    needs: lint-and-test
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            tarot-engine/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('tarot-engine/Cargo.lock') }}
+
+      # ── Wasm Build ──────────────────────────
+      - name: wasm-pack build
+        run: wasm-pack build --target web --release
+        working-directory: tarot-engine
+
+      # ── React Build ──────────────────────────
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: tarot-app/node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('tarot-app/package-lock.json') }}
+
+      - name: React — npm install
+        run: npm ci
+        working-directory: tarot-app
+
+      - name: React — npm run build
+        run: npm run build
+        working-directory: tarot-app
+
+      # ── 上傳產物 ──────────────────────────
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tarot-dist
+          path: tarot-app/dist/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────
+  # 階段三：Deploy to GitHub Pages
+  # ─────────────────────────────────────────────────────
+  deploy:
+    name: 🚀 Deploy to GitHub Pages
+    runs-on: self-hosted
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Download dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tarot-dist
+          path: dist/
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          commit_message: '🚀 deploy: ${{ github.sha }}'
