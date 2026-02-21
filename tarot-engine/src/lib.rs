@@ -127,6 +127,12 @@ pub struct TarotDeck {
     drawn: Vec<Card>,
 }
 
+impl Default for TarotDeck {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[wasm_bindgen]
 impl TarotDeck {
     /// 建立一副完整 78 張牌
