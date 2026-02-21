@@ -2,10 +2,26 @@ import { motion } from 'framer-motion'
 import { getCardSigil } from '../tarotData'
 
 const cardVariants = {
-    hidden: { opacity: 0, y: 60, rotateY: 90, scale: 0.8 },
+    hidden: {
+        opacity: 0,
+        y: 80,
+        rotateY: -90,
+        scale: 0.5,
+        filter: 'blur(4px)',
+    },
     visible: (i) => ({
-        opacity: 1, y: 0, rotateY: 0, scale: 1,
-        transition: { delay: i * 0.12, duration: 0.6, type: 'spring', stiffness: 100 },
+        opacity: 1,
+        y: 0,
+        rotateY: 0,
+        scale: 1,
+        filter: 'blur(0px)',
+        transition: {
+            delay: i * 0.14,
+            duration: 0.65,
+            type: 'spring',
+            stiffness: 90,
+            damping: 14,
+        },
     }),
 }
 

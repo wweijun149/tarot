@@ -1,7 +1,8 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, Fragment } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import TarotCard from './components/TarotCard'
 import CardModal from './components/CardModal'
+import ShuffleAnimation from './components/ShuffleAnimation'
 import { TOPICS } from './tarotData'
 import { TarotDeck } from './tarotEngine'
 import './index.css'
@@ -49,7 +50,7 @@ export default function App() {
   const handleShuffle = useCallback(async () => {
     setIsShuffling(true)
     setDrawnCards([])
-    await new Promise((r) => setTimeout(r, 350))
+    await new Promise((r) => setTimeout(r, 700))
     deckRef.current.shuffle()
     setRemaining(deckRef.current.remaining())
     setShuffled(true)
@@ -132,11 +133,17 @@ export default function App() {
       <div className="controls">
         <button
           id="btn-shuffle"
-          className="btn btn--primary"
+          className={`btn btn--primary${isShuffling ? ' is-shuffling' : ''}`}
           onClick={handleShuffle}
           disabled={isShuffling}
         >
-          {isShuffling ? '洗牌中…' : '🌀 洗牌'}
+          {isShuffling ? (
+            <>
+              <span className="btn-shuffle-dot" aria-hidden>🌀</span> 洗牌中…
+            </>
+          ) : (
+            '🌀 洗牌'
+          )}
         </button>
 
         <div className="draw-count">
@@ -191,9 +198,12 @@ export default function App() {
       {/* ── Status ── */}
       <p className={`status-msg${isError ? ' error' : ''}`}>{status}</p>
 
-      {/* ── Card Grid ── */}
-      {drawnCards.length > 0 ? (
-        <>
+      {/* ── 洗牌動畫 ── */}
+      <AnimatePresence mode="wait">
+        {isShuffling ? (
+          <ShuffleAnimation key="shuffle" />
+        ) : drawnCards.length > 0 ? (
+        <Fragment key="cards">
           <p className="spread-label">
             {currentTopic?.icon} {currentTopic?.label}牌陣 · 點擊牌面查看解讀
           </p>
@@ -209,9 +219,9 @@ export default function App() {
               ))}
             </AnimatePresence>
           </div>
-        </>
-      ) : (
-        <div className="empty-state">
+        </Fragment>
+        ) : (
+        <div className="empty-state" key="empty">
           <div className="empty-state__icon">
             {currentTopic?.icon || '🔮'}
           </div>
@@ -224,7 +234,8 @@ export default function App() {
               : '先選擇你想占卜的主題，再點擊洗牌'}
           </p>
         </div>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* ── Modal ── */}
       <AnimatePresence>
