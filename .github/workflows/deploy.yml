@@ -51,13 +51,11 @@ jobs:
       - name: Rust — cargo test
         run: cargo test --lib --manifest-path tarot-engine/Cargo.toml
 
-      - name: Install wasm-pack
+      - name: Install wasm-pack and build
         run: |
           curl -sSf https://rustwasm.github.io/wasm-pack/installer.sh | sh -s -- -f
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-
-      - name: wasm-pack build (for npm dependency)
-        run: wasm-pack build --target web --release
+          export PATH="$HOME/.cargo/bin:$PATH"
+          wasm-pack build --target web --release
         working-directory: tarot-engine
 
       - name: Setup Node.js
@@ -92,11 +90,6 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
 
-      - name: Install wasm-pack
-        run: |
-          curl -sSf https://rustwasm.github.io/wasm-pack/installer.sh | sh -s -- -f
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
@@ -107,8 +100,11 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('tarot-engine/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
 
-      - name: wasm-pack build
-        run: wasm-pack build --target web --release
+      - name: Install wasm-pack and build
+        run: |
+          curl -sSf https://rustwasm.github.io/wasm-pack/installer.sh | sh -s -- -f
+          export PATH="$HOME/.cargo/bin:$PATH"
+          wasm-pack build --target web --release
         working-directory: tarot-engine
 
       - name: Setup Node.js
