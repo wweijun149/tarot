@@ -1,8 +1,8 @@
-use wasm_bindgen::prelude::*;
+use rand::rngs::OsRng;
 use rand::seq::SliceRandom;
 use rand::Rng;
-use rand::rngs::OsRng;
 use serde::{Deserialize, Serialize};
+use wasm_bindgen::prelude::*;
 
 // ─────────────────────────────────────────────
 // 資料結構定義
@@ -161,8 +161,7 @@ impl TarotDeck {
         let drawn: Vec<Card> = self.cards.drain(0..n).collect();
         self.drawn.extend(drawn.clone());
 
-        serde_wasm_bindgen::to_value(&drawn)
-            .map_err(|e| JsValue::from_str(&e.to_string()))
+        serde_wasm_bindgen::to_value(&drawn).map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
     /// 剩餘牌數
